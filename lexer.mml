@@ -1,0 +1,188 @@
+{ #use "processTokens.ml";; }
+
+let number = ('0' | ['1'-'9'] ['0'-'9']*)
+let varname = ((['a'-'z']|['A'-'Z']|'_') (['a'-'z']|['A'-'Z']|'_'|['0'-'9'])*)
+
+let stringname = ('"'(['a'-'z']|['A'-'Z']|['0'-'9']|'_'|':'|'\n')*'"')
+
+let float = (['0'-'9']+'.'['0'-'9']+)
+
+let tab = ("    "|'\t')
+
+
+rule lexer0 = parse
+     | stringname as str
+     {
+        (StringTok(str))::(lexer0 lexbuf)
+     }
+     | number as num
+     {
+        (IntTok(int_of_string num))::(lexer0 lexbuf)
+     }
+     | float as num
+     {
+        (FloatTok(float_of_string num))::(lexer0 lexbuf)
+     }
+     | "True"
+     {
+        (BoolTok(true))::(lexer0 lexbuf)
+     }
+     | "False"
+     {
+        (BoolTok(false))::(lexer0 lexbuf)
+     }
+     | "if"
+     {
+        IfTok::LParenTok::(lexer0 lexbuf)
+     }
+     | "elif"
+     {
+        ElifTok::LParenTok::(lexer0 lexbuf)
+     }
+     | "else"
+     {
+        (* I know its bad that an else has an expression
+             but this is the best way
+        *)
+        ElseTok::LParenTok::(lexer0 lexbuf)
+     }
+     | "while"
+     {
+        (WhileTok)::(LParenTok)::(lexer0 lexbuf)
+     }
+     | "not"
+     {
+        (NotTok)::(lexer0 lexbuf)
+     }
+     | "and"
+     {
+        AndTok::(lexer0 lexbuf)
+     }
+     | "or"
+     {
+        OrTok::(lexer0 lexbuf)
+     }
+     | "print"
+     {
+        PrintTok::(lexer0 lexbuf)
+     }
+     | varname as var
+     {
+        (NameTok(var))::(lexer0 lexbuf)
+     }
+     | "\n"
+     {
+        (NewLineTok)::(lexer0 lexbuf)
+     }
+     | "\t"
+     {
+        (TabTok)::(lexer0 lexbuf)
+     }
+     | " \t"
+     {
+        (TabTok)::(lexer0 lexbuf)
+     }
+     | "  \t"
+     {
+        (TabTok)::(lexer0 lexbuf)
+     }
+     | "   \t"
+     {
+        (TabTok)::(lexer0 lexbuf)
+     }
+     | "    "
+     {
+        (TabTok)::(lexer0 lexbuf)
+     }
+     | "**"
+     {
+        ExpTok::(lexer0 lexbuf)
+     }
+     | "%"
+     {
+        ModTok::(lexer0 lexbuf)
+     }
+     | "+"
+     {
+        (AddTok)::(lexer0 lexbuf)
+     }
+     | "-"
+     {
+        (SubTok)::(lexer0 lexbuf)
+     }
+     | "*"
+     {
+        (MulTok)::(lexer0 lexbuf)
+     }
+     | "/"
+     {
+        (DivTok)::(lexer0 lexbuf)
+     }
+     | "="
+     {
+        (AssignTok)::(lexer0 lexbuf)
+     }
+     | "+="
+     {
+        (AugAddTok)::(lexer0 lexbuf)
+     }
+     | "-="
+     {
+        (AugSubTok)::(lexer0 lexbuf)
+     }
+     | "*="
+     {
+        (AugMulTok)::(lexer0 lexbuf)
+     }
+     | "/="
+     {
+        (AugDivTok)::(lexer0 lexbuf)
+     }
+     | "%="
+     {
+        (AugModTok)::(lexer0 lexbuf)
+     }
+     | "=="
+     {
+        (EqualTok)::(lexer0 lexbuf)
+     }
+     | ">"
+     {
+        (GrTok)::(lexer0 lexbuf)
+     }
+     | "<"
+     {
+        (LsTok)::(lexer0 lexbuf)
+     }
+     | ">="
+     {
+        (GrEqTok)::(lexer0 lexbuf)
+     }
+     | "<="
+     {
+        (LsEqTok)::(lexer0 lexbuf)
+     }
+     | "!="
+     {
+        (NotEqTok)::(lexer0 lexbuf)
+     }
+     | ":"
+     {
+        (RParenTok)::(ColonTok)::(lexer0 lexbuf)
+     }
+     | "("
+     {
+        (LParenTok)::(lexer0 lexbuf)
+     }
+     | ")"
+     {
+        (RParenTok)::(lexer0 lexbuf)
+     }
+     | eof
+     {
+        []
+     }
+     | _
+     {
+        (lexer0 lexbuf)
+     }
