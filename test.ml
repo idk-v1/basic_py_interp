@@ -1,7 +1,7 @@
 #use "python.ml"
 
 let input1 =
-  "print \"primes_0_to_100:\n\"\n"            ^
+  "print \"primes 0 to 100:\n\"\n"            ^
   "max = 100\n"                               ^
   "i = 0\n"                                   ^
   "while i < max:\n"                          ^
@@ -21,7 +21,7 @@ let input1 =
 ;;
 
 let input2 =
-  "print \"even_numbers_0_to_100:\n\"\n"^
+  "print \"even numbers 0 to 100:\n\"\n"^
   "max = 100\n"                         ^
   "i = 0\n"                             ^
   "while i < max:\n"                    ^

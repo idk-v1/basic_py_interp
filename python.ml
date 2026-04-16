@@ -66,7 +66,7 @@ let cnvToBool value = (
       if (value = 0.) then BoolTok(false)
       else BoolTok(true)
     )
-  | _-> raise (ExpectedValue("cnvToBool expects a bool, int, or float"))
+  | _-> raise (WrongTypeInt("cnvToBool expects a bool, int, or float"))
 );;
 let cnvToInt value = (
   match value with
@@ -76,7 +76,7 @@ let cnvToInt value = (
     )
   | IntTok(value) -> IntTok(value)
   | FloatTok(value) -> IntTok((int_of_float value))
-  | _ -> raise (ExpectedValue("cnvToInt expects a bool, int, or float"))
+  | _ -> raise (WrongTypeInt("cnvToInt expects a bool, int, or float"))
 );;
 let cnvToFloat value = (
   match value with
@@ -86,7 +86,7 @@ let cnvToFloat value = (
     )
   | IntTok(value) -> FloatTok((float_of_int value))
   | FloatTok(value) -> FloatTok(value)
-  | _ -> raise (ExpectedValue("convToFloat expects a bool, int, or float"))
+  | _ -> raise (WrongTypeInt("convToFloat expects a bool, int, or float"))
 );;
 
 
@@ -95,7 +95,7 @@ let getSymVal name symtbl = (
   | NameTok(name) -> (
       if (Hashtbl.mem symtbl name) then
         Hashtbl.find symtbl name
-      else raise (UnknownVar(name))
+      else raise (UnknownVarInt(name))
     )
   | _ -> name (* easier to let it pass thru if not var *)
 );;
@@ -103,7 +103,7 @@ let getSymVal name symtbl = (
 let setSymVal name symtbl value = (
   match name with
   | NameTok(name) -> Hashtbl.replace symtbl name value
-  | _ -> raise (UnknownVar((getTokString name)^" is not a var type"))
+  | _ -> raise (UnknownVarInt((getTokString name)^" is not a var type"))
 );;
 
 
@@ -116,6 +116,7 @@ let rec printValue value symtbl = (
   | BoolTok(value) -> Printf.printf "bool: %b\n" value
   | IntTok(value) -> Printf.printf "int: %d\n" value
   | FloatTok(value) -> Printf.printf "float: %f\n" value
+  | _ -> raise (WrongTypeInt((getTokString value)^" is not a value type"))
 );;
 
 
@@ -136,7 +137,7 @@ let promoteTypes left right symtbl = (
   | ((FloatTok(_)), (BoolTok(_)) ) -> (left, cnvToFloat right)
   | ((FloatTok(_)), (IntTok(_))  ) -> (left, cnvToFloat right)
 
-  | (_, _) -> raise (ExpectedValue("promoteTypes expects bools, ints, and floats"))
+  | (_, _) -> raise (WrongTypeInt("promoteTypes expects bools, ints, and floats"))
 );;
 
 
@@ -148,15 +149,15 @@ let promAtlInt left right symtbl = (
 
 let getFloat tok = match tok with
   | FloatTok(value) -> value
-  | _ -> raise (ExpectedValue("getFloat expects a float"))
+  | _ -> raise (WrongTypeInt("getFloat expects a float"))
 ;;
 let getInt tok = match tok with
   | IntTok(value) -> value
-  | _ -> raise (ExpectedValue("getInt expects an int"))
+  | _ -> raise (WrongTypeInt("getInt expects an int"))
 ;;
 let getBool tok = match tok with
   | BoolTok(value) -> value
-  | _ -> raise (ExpectedValue("getBool expects a bool"))
+  | _ -> raise (WrongTypeInt("getBool expects a bool"))
 ;;
 
 
@@ -182,8 +183,8 @@ let execArith op left right = (
       | 3 -> FloatTok(left -. right)
       | _ -> raise (InvalidEnum(op))
     )
-  | BoolTok(_) -> raise (ExpectedValue("bool is not arith type"))
-  | _ -> raise (ExpectedValue("execArith expects int or float. not a "^(getTokString left)))
+  | BoolTok(_) -> raise (WrongTypeInt("bool is not arith type"))
+  | _ -> raise (WrongTypeInt("execArith expects int or float. not a "^(getTokString left)))
 );;
 
 let execComp op left right = (
@@ -224,7 +225,7 @@ let execComp op left right = (
       | 5 -> BoolTok(left <= right)
       | _ -> raise (InvalidEnum(op))
     )
-  | _ -> raise (ExpectedValue("execComp expects a bool, int, or float. not a "^(getTokString left)))
+  | _ -> raise (WrongTypeInt("execComp expects a bool, int, or float. not a "^(getTokString left)))
 );;
 
 
@@ -321,9 +322,9 @@ let rec execOp2 op left right symtbl = (
 
 let fmtString str = (
   let strs = String.split_on_char '\"' str in
-  match strs with | _::str::_ -> (
-      String.map (fun x -> if x = '_' then ' ' else x) str
-    )
+  match strs with
+  | _::str::_ -> str
+  | _ -> raise (HowDidWeGetHere(0))
 );;
 
 let rec execOp1 op right symtbl = (
@@ -351,51 +352,61 @@ let rec execScopeRec scope symtbl wasif ifdone = (
       match lines with
       | [] -> ()
       | line::tail -> (
-          match (getLineList line) with
-          | [] -> ()
-          | IfTok::_ -> (
-              let ret = (execLine line symtbl) in
-              (execScopeRec (Block(tail)) symtbl true ret)
-            )
-          | ElifTok::_ -> (
-              if (wasif) then (
-                if (not ifdone) then (
-                  let ret = (execLine line symtbl) in
-                  (execScopeRec (Block(tail)) symtbl true ret)
-                )
-                else (
-                  (execScopeRec (Block(tail)) symtbl true ifdone)
-                )
+          try (
+            match (getLineList line) with
+            | [] -> ()
+            | IfTok::_ -> (
+                let ret = (execLine line symtbl) in
+                (execScopeRec (Block(tail)) symtbl true ret)
               )
-              else raise (IllegalElse(getLineNum line))
-            )
-          | ElseTok::_ -> (
-              if (wasif) then (
-                if (not ifdone) then (
-                  let _ = (execLine line symtbl) in
+            | ElifTok::_ -> (
+                if (wasif) then (
+                  if (not ifdone) then (
+                    let ret = (execLine line symtbl) in
+                    (execScopeRec (Block(tail)) symtbl true ret)
+                  )
+                  else (
+                    (execScopeRec (Block(tail)) symtbl true ifdone)
+                  )
+                )
+                else raise (IllegalElse(getLineNum line))
+              )
+            | ElseTok::_ -> (
+                if (wasif) then (
+                  if (not ifdone) then (
+                    let _ = (execLine line symtbl) in
+                    (execScopeRec (Block(tail)) symtbl false false)
+                  )
+                  else (execScopeRec (Block(tail)) symtbl false false)
+                )
+                else raise (IllegalElse(getLineNum line))
+              )
+            | WhileTok::_ -> (
+                let ret = (execLine line symtbl) in
+                if (ret) then
+                  (execScopeRec (Block(lines)) symtbl false false)
+                else
                   (execScopeRec (Block(tail)) symtbl false false)
-                )
-                else (execScopeRec (Block(tail)) symtbl false false)
               )
-              else raise (IllegalElse(getLineNum line))
-            )
-          | WhileTok::_ -> (
-              let ret = (execLine line symtbl) in
-              if (ret) then
-                (execScopeRec (Block(lines)) symtbl false false)
-              else
+            | _ -> (
+                let _ = (execLine line symtbl) in
                 (execScopeRec (Block(tail)) symtbl false false)
-            )
-          | _ -> (
-              (execLine line symtbl);
-              (execScopeRec (Block(tail)) symtbl false false)
-            )
+              )
+          ) with
+          | UnknownVarInt(str) -> raise (UnknownVar(str, (getLineNum line)))
+          | ExpectedOpInt -> raise (ExpectedOp((getLineNum line)))
+          | ExpectedValueInt(str) -> raise (ExpectedValue(str, (getLineNum line)))
+          | WrongTypeInt(str) -> raise (WrongType(str, (getLineNum line)))
         )
     )
 )
 and execLineRPN toks symtbl nums isAss = (
   match toks with
-  | [] -> (getHead nums, isAss)
+  | [] -> (
+      if (List.length nums = 1) then
+        (getHead nums, isAss)
+        else raise (ExpectedOpInt)
+    )
             
   | BoolTok(value)::tail -> execLineRPN tail symtbl ((BoolTok(value))::nums) isAss
   | IntTok(value)::tail -> execLineRPN tail symtbl ((IntTok(value))::nums) isAss
@@ -413,7 +424,7 @@ and execLineRPN toks symtbl nums isAss = (
           else
             execLineRPN tail symtbl (ret::(getTail nums)) isAss
         )
-        else raise (ExpectedValue((getTokString op)^"missing value"))
+        else raise (ExpectedValueInt((getTokString op)^"missing value"))
       )
       else ( (* two ops or invalid *)
         if ((getOpValue op) = 0) then ( (* assignment ops *)
@@ -423,7 +434,7 @@ and execLineRPN toks symtbl nums isAss = (
             let ret = execOp2 op left right symtbl in
             execLineRPN tail symtbl (ret::(getTail (getTail nums))) true
           )
-          else raise (ExpectedValue((getTokString op)^" missing value(s)"))
+          else raise (ExpectedValueInt((getTokString op)^" missing value(s)"))
         )
         else (
           if (List.length nums >= 2) then (
@@ -432,7 +443,7 @@ and execLineRPN toks symtbl nums isAss = (
             let ret = execOp2 op left right symtbl in
             execLineRPN tail symtbl (ret::(getTail (getTail nums))) isAss
           )
-          else raise (ExpectedValue((getTokString op)^"missing value(s)"))
+          else raise (ExpectedValueInt((getTokString op)^"missing value(s)"))
         )
       )
     )
@@ -583,7 +594,9 @@ let rec applyRPN lines = (
     if (checkParenthesis line 0) then
       (convertRPN (convertUnary line))::(applyRPN tail)
     else raise (MismatchedPar(
-        match line with | LineNumTok(value)::tail -> value
+        match line with
+        | LineNumTok(value)::tail -> value
+        | _ -> raise (HowDidWeGetHere(0))
       ))
 );;
 
