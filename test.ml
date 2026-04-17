@@ -1,10 +1,16 @@
+(*
+   Name: Ben Hamilton
+   File: test.ml
+*)
+
 #use "python.ml"
 
 let primes =
-  "print \"primes 0 to \"\n"                  ^
+  "print \"primes from \"\n"                  ^
+  "input i\n"                                 ^
+  "print \"to \"\n"                           ^
   "input max\n"                               ^
-  "i = 0\n"                                   ^
-  "while i < max:\n"                          ^
+  "while i <= max:\n"                         ^
   "    if i == 2:\n"                          ^
   "        print i\n"                         ^
   "    elif i > 2:\n"                         ^
