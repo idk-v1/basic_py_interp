@@ -8,6 +8,7 @@
 let getOpValue op = (
   match op with
   | ExpTok -> 8
+  | SqrtTok -> 8
   | NegateTok -> 7
   | MulTok -> 6
   | DivTok -> 6
@@ -31,6 +32,7 @@ let getOpValue op = (
   | AugModTok -> 0
   | LParenTok -> -1
   | RParenTok -> -2
+  | PrintlnTok -> 0
   | PrintTok -> 0
   | InputTok -> 0
   | _ -> raise (Invalid_argument ((getTokString op)^" is not an operator"))
@@ -39,7 +41,9 @@ let getOpValue op = (
 let getOpAss op = (
   match op with
   | ExpTok -> 1
+  | SqrtTok -> 1
   | NegateTok -> 1
+  | PrintlnTok -> 1
   | PrintTok -> 1
   | InputTok -> 1
   | _ -> 0
@@ -57,8 +61,10 @@ let getNumOpValues op = (
   match op with
   | NegateTok -> 1
   | NotTok -> 1
+  | PrintlnTok -> 1
   | PrintTok -> 1
   | InputTok -> 1
+  | SqrtTok -> 1
   | _ -> 2
 )
 
@@ -358,6 +364,10 @@ let getInput () = (
 
 let rec execOp1 op right symtbl = (
   match op with
+  | SqrtTok -> (
+      let right = cnvToFloat (getSymVal right symtbl) in
+      FloatTok(sqrt (getFloat right))
+    )
   | NegateTok -> execOp2 SubTok (IntTok(0)) right symtbl
   | NotTok -> BoolTok(not (getBool (cnvToBool (getSymVal right symtbl))))
   | PrintTok -> (
@@ -368,6 +378,11 @@ let rec execOp1 op right symtbl = (
       | IntTok(value) -> Printf.printf "%d " value; right
       | FloatTok(value) -> Printf.printf "%f " value; right
       | _ -> printTok right; right
+    )
+  | PrintlnTok -> (
+      let ret = execOp1 PrintTok right symtbl in
+      Printf.printf "\n";
+      ret
     )
   | InputTok -> (
       match right with
