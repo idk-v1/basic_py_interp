@@ -27,6 +27,7 @@ let getOpValue op = (
   | LParenTok -> -1
   | RParenTok -> -2
   | PrintTok -> 0
+  | InputTok -> 0
   | _ -> raise (Invalid_argument ((getTokString op)^" is not an operator"))
 );;
 
@@ -35,6 +36,7 @@ let getOpAss op = (
   | ExpTok -> 1
   | NegateTok -> 1
   | PrintTok -> 1
+  | InputTok -> 1
   | _ -> 0
 );;
 
@@ -51,6 +53,7 @@ let getNumOpValues op = (
   | NegateTok -> 1
   | NotTok -> 1
   | PrintTok -> 1
+  | InputTok -> 1
   | _ -> 2
 )
 
@@ -328,6 +331,26 @@ let fmtString str = (
   | _ -> raise (HowDidWeGetHere(0))
 );;
 
+let getInput () = (
+  let input = read_line () in
+  (*
+     try bool,
+     then int,
+     then float
+  *)
+  if (input = "True") then (BoolTok(true))
+  else (
+    if (input = "False") then (BoolTok(false))
+    else (
+      try (
+        IntTok(int_of_string input)
+      ) with Failure(_) -> try (
+        FloatTok(float_of_string input)
+      ) with Failure(_) -> raise (BadInputInt(input))
+    )
+  )
+);;
+
 let rec execOp1 op right symtbl = (
   match op with
   | NegateTok -> execOp2 SubTok (IntTok(0)) right symtbl
@@ -340,6 +363,14 @@ let rec execOp1 op right symtbl = (
       | IntTok(value) -> Printf.printf "%d " value; right
       | FloatTok(value) -> Printf.printf "%f " value; right
       | _ -> printTok right; right
+    )
+  | InputTok -> (
+      match right with
+      | NameTok(name) -> (
+          (setSymVal (NameTok(name)) symtbl (getInput ()));
+          NameTok(name)
+        )
+      | _ -> raise (NotVarTypeInt(getTokString right))
     )
   | _ -> raise (InvalidOp(getTokString op))
 );;
@@ -399,6 +430,7 @@ let rec execScopeRec scope symtbl wasif ifdone = (
           | ExpectedValueInt(str) -> raise (ExpectedValue(str, (getLineNum line)))
           | NotVarTypeInt(str) -> raise (NotVarType(str, (getLineNum line)))
           | Division_by_zero -> raise (DivByZero((getLineNum line)))
+          | BadInputInt(str) -> raise (BadInput(str, (getLineNum line)))
         )
     )
 )
@@ -605,7 +637,7 @@ let rec applyRPN lines = (
 
 let execPython input = (
   try (
-    let tokens = (lexer0 (Lexing.from_string input)) in
+    let tokens = (lexer0 0 (Lexing.from_string input)) in
     let tokens = insertScopeMarkers tokens in
     let lines = groupLines tokens in
     let lines = applyRPN lines in
@@ -636,6 +668,8 @@ let execPython input = (
     Printf.printf "ERROR on line %d: Non-control statement has block\n" num
   | DivByZero(num) ->
     Printf.printf "ERROR on line %d: Division by 0\n" num
-  | UnknownToken(tok) ->
-    Printf.printf "ERROR tokenizing: Unknown char %c\n" tok
+  | UnknownToken(tok, num) ->
+    Printf.printf "ERROR on line %d: Unknown char %c\n" num tok
+  | BadInput(str, num) ->
+    Printf.printf "ERROR on line %d: Bad input \"%s\"\n" num str
 );;

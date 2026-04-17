@@ -3,180 +3,184 @@
 let number = ('0' | ['1'-'9'] ['0'-'9']*)
 let varname = ((['a'-'z']|['A'-'Z']|'_') (['a'-'z']|['A'-'Z']|'_'|['0'-'9'])*)
 
-let stringname = ('"'(['a'-'z']|['A'-'Z']|['0'-'9']|'_'|':'|'\n'|' ')*'"')
+let stringname = ('"'(['a'-'z']|['A'-'Z']|['0'-'9']|'_'|':'|'\n'|' '|'='|'.'|','|'('|')')*'"')
 
 let float = (['0'-'9']+'.'['0'-'9']+)|('.'['0'-'9']+)|(['0'-'9']+'.')
 
 let tab = ("    "|'\t')
 
 
-rule lexer0 = parse
+rule lexer0 lineNum = parse
      | stringname as str
      {
-        (StringTok(str))::(lexer0 lexbuf)
+        (StringTok(str))::(lexer0 lineNum lexbuf)
      }
      | number as num
      {
-        (IntTok(int_of_string num))::(lexer0 lexbuf)
+        (IntTok(int_of_string num))::(lexer0 lineNum lexbuf)
      }
      | float as num
      {
-        (FloatTok(float_of_string num))::(lexer0 lexbuf)
+        (FloatTok(float_of_string num))::(lexer0 lineNum lexbuf)
      }
      | "True"
      {
-        (BoolTok(true))::(lexer0 lexbuf)
+        (BoolTok(true))::(lexer0 lineNum lexbuf)
      }
      | "False"
      {
-        (BoolTok(false))::(lexer0 lexbuf)
+        (BoolTok(false))::(lexer0 lineNum lexbuf)
      }
      | "if"
      {
-        IfTok::LParenTok::(lexer0 lexbuf)
+        IfTok::LParenTok::(lexer0 lineNum lexbuf)
      }
      | "elif"
      {
-        ElifTok::LParenTok::(lexer0 lexbuf)
+        ElifTok::LParenTok::(lexer0 lineNum lexbuf)
      }
      | "else"
      {
         (* I know its bad that an else has an expression
              but this is the best way
         *)
-        ElseTok::LParenTok::(lexer0 lexbuf)
+        ElseTok::LParenTok::(lexer0 lineNum lexbuf)
      }
      | "while"
      {
-        (WhileTok)::(LParenTok)::(lexer0 lexbuf)
+        (WhileTok)::(LParenTok)::(lexer0 lineNum lexbuf)
      }
      | "not"
      {
-        (NotTok)::(lexer0 lexbuf)
+        (NotTok)::(lexer0 lineNum lexbuf)
      }
      | "and"
      {
-        AndTok::(lexer0 lexbuf)
+        AndTok::(lexer0 lineNum lexbuf)
      }
      | "or"
      {
-        OrTok::(lexer0 lexbuf)
+        OrTok::(lexer0 lineNum lexbuf)
      }
      | "print"
      {
-        PrintTok::(lexer0 lexbuf)
+        PrintTok::(lexer0 lineNum lexbuf)
+     }
+     | "input"
+     {
+        InputTok::(lexer0 lineNum lexbuf)
      }
      | varname as var
      {
-        (NameTok(var))::(lexer0 lexbuf)
+        (NameTok(var))::(lexer0 lineNum lexbuf)
      }
      | "\n"
      {
-        (NewLineTok)::(lexer0 lexbuf)
+        (NewLineTok)::(lexer0 (lineNum+1) lexbuf)
      }
      | "\t"
      {
-        (TabTok)::(lexer0 lexbuf)
+        (TabTok)::(lexer0 lineNum lexbuf)
      }
      | " \t"
      {
-        (TabTok)::(lexer0 lexbuf)
+        (TabTok)::(lexer0 lineNum lexbuf)
      }
      | "  \t"
      {
-        (TabTok)::(lexer0 lexbuf)
+        (TabTok)::(lexer0 lineNum lexbuf)
      }
      | "   \t"
      {
-        (TabTok)::(lexer0 lexbuf)
+        (TabTok)::(lexer0 lineNum lexbuf)
      }
      | "    "
      {
-        (TabTok)::(lexer0 lexbuf)
+        (TabTok)::(lexer0 lineNum lexbuf)
      }
      | "**"
      {
-        ExpTok::(lexer0 lexbuf)
+        ExpTok::(lexer0 lineNum lexbuf)
      }
      | "%"
      {
-        ModTok::(lexer0 lexbuf)
+        ModTok::(lexer0 lineNum lexbuf)
      }
      | "+"
      {
-        (AddTok)::(lexer0 lexbuf)
+        (AddTok)::(lexer0 lineNum lexbuf)
      }
      | "-"
      {
-        (SubTok)::(lexer0 lexbuf)
+        (SubTok)::(lexer0 lineNum lexbuf)
      }
      | "*"
      {
-        (MulTok)::(lexer0 lexbuf)
+        (MulTok)::(lexer0 lineNum lexbuf)
      }
      | "/"
      {
-        (DivTok)::(lexer0 lexbuf)
+        (DivTok)::(lexer0 lineNum lexbuf)
      }
      | "="
      {
-        (AssignTok)::(lexer0 lexbuf)
+        (AssignTok)::(lexer0 lineNum lexbuf)
      }
      | "+="
      {
-        (AugAddTok)::(lexer0 lexbuf)
+        (AugAddTok)::(lexer0 lineNum lexbuf)
      }
      | "-="
      {
-        (AugSubTok)::(lexer0 lexbuf)
+        (AugSubTok)::(lexer0 lineNum lexbuf)
      }
      | "*="
      {
-        (AugMulTok)::(lexer0 lexbuf)
+        (AugMulTok)::(lexer0 lineNum lexbuf)
      }
      | "/="
      {
-        (AugDivTok)::(lexer0 lexbuf)
+        (AugDivTok)::(lexer0 lineNum lexbuf)
      }
      | "%="
      {
-        (AugModTok)::(lexer0 lexbuf)
+        (AugModTok)::(lexer0 lineNum lexbuf)
      }
      | "=="
      {
-        (EqualTok)::(lexer0 lexbuf)
+        (EqualTok)::(lexer0 lineNum lexbuf)
      }
      | ">"
      {
-        (GrTok)::(lexer0 lexbuf)
+        (GrTok)::(lexer0 lineNum lexbuf)
      }
      | "<"
      {
-        (LsTok)::(lexer0 lexbuf)
+        (LsTok)::(lexer0 lineNum lexbuf)
      }
      | ">="
      {
-        (GrEqTok)::(lexer0 lexbuf)
+        (GrEqTok)::(lexer0 lineNum lexbuf)
      }
      | "<="
      {
-        (LsEqTok)::(lexer0 lexbuf)
+        (LsEqTok)::(lexer0 lineNum lexbuf)
      }
      | "!="
      {
-        (NotEqTok)::(lexer0 lexbuf)
+        (NotEqTok)::(lexer0 lineNum lexbuf)
      }
      | ":"
      {
-        (RParenTok)::(ColonTok)::(lexer0 lexbuf)
+        (RParenTok)::(ColonTok)::(lexer0 lineNum lexbuf)
      }
      | "("
      {
-        (LParenTok)::(lexer0 lexbuf)
+        (LParenTok)::(lexer0 lineNum lexbuf)
      }
      | ")"
      {
-        (RParenTok)::(lexer0 lexbuf)
+        (RParenTok)::(lexer0 lineNum lexbuf)
      }
      | eof
      {
@@ -184,9 +188,9 @@ rule lexer0 = parse
      }
      | " "
      {
-        (lexer0 lexbuf)
+        (lexer0 lineNum lexbuf)
      }
      | _ as tok
      {
-        raise (UnknownToken(tok))
+        raise (UnknownToken(tok, lineNum))
      }

@@ -1,8 +1,8 @@
 #use "python.ml"
 
 let primes =
-  "print \"primes 0 to 100:\n\"\n"            ^
-  "max = 100\n"                               ^
+  "print \"primes 0 to \"\n"                  ^
+  "input max\n"                               ^
   "i = 0\n"                                   ^
   "while i < max:\n"                          ^
   "    if i == 2:\n"                          ^
@@ -17,7 +17,8 @@ let primes =
   "                ii += 1\n"                 ^
   "        if not found:\n"                   ^
   "            print i\n"                     ^
-  "    i += 1\n"
+  "    i += 1\n"                              ^
+  "print \"\n\""
 ;;
 
 let testUnknownVar =
@@ -53,6 +54,11 @@ let testDivZero =
 let testBadChar =
   "1 + 112&\n";;
 
+let testInput =
+  "print input i\n";;
+
+execPython testInput;;
+Printf.printf "\n";;
 execPython testUnknownVar;;
 execPython testNoOp;;
 execPython testNoValue;;

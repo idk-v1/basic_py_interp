@@ -15,9 +15,12 @@ exception IllegalElse of int;;
 exception EmptyCtrlBlock of int;;
 exception NonIfCtrlBlock of int;;
 exception DivByZero of int;;
-exception UnknownToken of char;; (* tokenizing phase, not much to tell *)
+exception UnknownToken of char * int;; (* tokenizing phase, not much to tell *)
+exception BadInputInt of string;;
+exception BadInput of string * int;;
 
 type py_token =
+  | InputTok
   | PrintTok
   | StringTok of string
   | LineNumTok of int
@@ -62,6 +65,7 @@ type py_token =
 
 let getTokString token = (
   match token with
+  | InputTok -> "input"
   | PrintTok -> "print"
   | StringTok(_) -> "string"
   | LineNumTok(_) -> "lineNum"
@@ -106,6 +110,7 @@ let getTokString token = (
 
 let rec printTok token = (
   match token with
+  | InputTok -> Printf.printf "input "
   | PrintTok -> Printf.printf "print "
   | StringTok(str) -> Printf.printf "%s " str
   | LineNumTok(num) -> Printf.printf "lineNum:%d " num
