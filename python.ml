@@ -66,7 +66,7 @@ let cnvToBool value = (
       if (value = 0.) then BoolTok(false)
       else BoolTok(true)
     )
-  | _-> raise (WrongTypeInt("cnvToBool expects a bool, int, or float"))
+  | _-> raise (WrongType("cnvToBool expects a bool, int, or float"))
 );;
 let cnvToInt value = (
   match value with
@@ -76,7 +76,7 @@ let cnvToInt value = (
     )
   | IntTok(value) -> IntTok(value)
   | FloatTok(value) -> IntTok((int_of_float value))
-  | _ -> raise (WrongTypeInt("cnvToInt expects a bool, int, or float"))
+  | _ -> raise (WrongType("cnvToInt expects a bool, int, or float"))
 );;
 let cnvToFloat value = (
   match value with
@@ -86,7 +86,7 @@ let cnvToFloat value = (
     )
   | IntTok(value) -> FloatTok((float_of_int value))
   | FloatTok(value) -> FloatTok(value)
-  | _ -> raise (WrongTypeInt("convToFloat expects a bool, int, or float"))
+  | _ -> raise (WrongType("convToFloat expects a bool, int, or float"))
 );;
 
 
@@ -103,20 +103,21 @@ let getSymVal name symtbl = (
 let setSymVal name symtbl value = (
   match name with
   | NameTok(name) -> Hashtbl.replace symtbl name value
-  | _ -> raise (UnknownVarInt((getTokString name)^" is not a var type"))
+  | _ -> raise (NotVarTypeInt((getTokString name)))
 );;
 
 
 let rec printValue value symtbl = (
   match value with
   | NameTok(name) -> (
+      let value = getSymVal value symtbl in
       Printf.printf "%s: " name;
-      printValue (getSymVal value symtbl) symtbl
+      printValue value symtbl
     )
   | BoolTok(value) -> Printf.printf "bool: %b\n" value
   | IntTok(value) -> Printf.printf "int: %d\n" value
   | FloatTok(value) -> Printf.printf "float: %f\n" value
-  | _ -> raise (WrongTypeInt((getTokString value)^" is not a value type"))
+  | _ -> raise (WrongType((getTokString value)^" is not a value type"))
 );;
 
 
@@ -137,7 +138,7 @@ let promoteTypes left right symtbl = (
   | ((FloatTok(_)), (BoolTok(_)) ) -> (left, cnvToFloat right)
   | ((FloatTok(_)), (IntTok(_))  ) -> (left, cnvToFloat right)
 
-  | (_, _) -> raise (WrongTypeInt("promoteTypes expects bools, ints, and floats"))
+  | (_, _) -> raise (WrongType("promoteTypes expects bools, ints, and floats"))
 );;
 
 
@@ -149,15 +150,15 @@ let promAtlInt left right symtbl = (
 
 let getFloat tok = match tok with
   | FloatTok(value) -> value
-  | _ -> raise (WrongTypeInt("getFloat expects a float"))
+  | _ -> raise (WrongType("getFloat expects a float"))
 ;;
 let getInt tok = match tok with
   | IntTok(value) -> value
-  | _ -> raise (WrongTypeInt("getInt expects an int"))
+  | _ -> raise (WrongType("getInt expects an int"))
 ;;
 let getBool tok = match tok with
   | BoolTok(value) -> value
-  | _ -> raise (WrongTypeInt("getBool expects a bool"))
+  | _ -> raise (WrongType("getBool expects a bool"))
 ;;
 
 
@@ -183,8 +184,8 @@ let execArith op left right = (
       | 3 -> FloatTok(left -. right)
       | _ -> raise (InvalidEnum(op))
     )
-  | BoolTok(_) -> raise (WrongTypeInt("bool is not arith type"))
-  | _ -> raise (WrongTypeInt("execArith expects int or float. not a "^(getTokString left)))
+  | BoolTok(_) -> raise (WrongType("bool is not arith type"))
+  | _ -> raise (WrongType("execArith expects int or float. not a "^(getTokString left)))
 );;
 
 let execComp op left right = (
@@ -225,7 +226,7 @@ let execComp op left right = (
       | 5 -> BoolTok(left <= right)
       | _ -> raise (InvalidEnum(op))
     )
-  | _ -> raise (WrongTypeInt("execComp expects a bool, int, or float. not a "^(getTokString left)))
+  | _ -> raise (WrongType("execComp expects a bool, int, or float. not a "^(getTokString left)))
 );;
 
 
@@ -396,7 +397,8 @@ let rec execScopeRec scope symtbl wasif ifdone = (
           | UnknownVarInt(str) -> raise (UnknownVar(str, (getLineNum line)))
           | ExpectedOpInt -> raise (ExpectedOp((getLineNum line)))
           | ExpectedValueInt(str) -> raise (ExpectedValue(str, (getLineNum line)))
-          | WrongTypeInt(str) -> raise (WrongType(str, (getLineNum line)))
+          | NotVarTypeInt(str) -> raise (NotVarType(str, (getLineNum line)))
+          | Division_by_zero -> raise (DivByZero((getLineNum line)))
         )
     )
 )
@@ -424,7 +426,7 @@ and execLineRPN toks symtbl nums isAss = (
           else
             execLineRPN tail symtbl (ret::(getTail nums)) isAss
         )
-        else raise (ExpectedValueInt((getTokString op)^"missing value"))
+        else raise (ExpectedValueInt((getTokString op)))
       )
       else ( (* two ops or invalid *)
         if ((getOpValue op) = 0) then ( (* assignment ops *)
@@ -434,7 +436,7 @@ and execLineRPN toks symtbl nums isAss = (
             let ret = execOp2 op left right symtbl in
             execLineRPN tail symtbl (ret::(getTail (getTail nums))) true
           )
-          else raise (ExpectedValueInt((getTokString op)^" missing value(s)"))
+          else raise (ExpectedValueInt((getTokString op)))
         )
         else (
           if (List.length nums >= 2) then (
@@ -443,7 +445,7 @@ and execLineRPN toks symtbl nums isAss = (
             let ret = execOp2 op left right symtbl in
             execLineRPN tail symtbl (ret::(getTail (getTail nums))) isAss
           )
-          else raise (ExpectedValueInt((getTokString op)^"missing value(s)"))
+          else raise (ExpectedValueInt((getTokString op)))
         )
       )
     )
@@ -602,14 +604,38 @@ let rec applyRPN lines = (
 
 
 let execPython input = (
-  let tokens = (lexer0 (Lexing.from_string input)) in
-  let tokens = insertScopeMarkers tokens in
-  let lineCount = (countNewLines tokens 0) in
-  let lineNumWidth = int_of_float (log10 (float_of_int lineCount)) in
-  let lines = groupLines tokens in
-  let lines = applyRPN lines in
-  let scope = makeScopeTree lines in
-  printScope scope lineNumWidth;
-  let (symtbl : (string, py_token) Hashtbl.t) = Hashtbl.create 100 in
-  execScope scope symtbl
+  try (
+    let tokens = (lexer0 (Lexing.from_string input)) in
+    let tokens = insertScopeMarkers tokens in
+    let lines = groupLines tokens in
+    let lines = applyRPN lines in
+    let scope = makeScopeTree lines in
+    (*
+    let lineCount = (countNewLines tokens 0) in
+    let lineNumWidth = int_of_float (log10 (float_of_int lineCount)) in
+    printScope scope lineNumWidth;
+    *)
+    let (symtbl : (string, py_token) Hashtbl.t) = Hashtbl.create 100 in
+    execScope scope symtbl
+  ) with
+  | UnknownVar(str, num) ->
+    Printf.printf "ERROR on line %d: Unknown variable: %s\n" num str
+  | ExpectedOp(num) ->
+    Printf.printf "ERROR on line %d: Missing operator\n" num
+  | ExpectedValue(str, num) ->
+    Printf.printf "ERROR on line %d: Missing value(s) for operator %s\n" num str
+  | MismatchedPar(num) ->
+    Printf.printf "ERROR on line %d: Mismatched parentheses\n" num
+  | NotVarType(str, num) ->
+    Printf.printf "ERROR on line %d: Cannot set value of non variable type %s\n" num str
+  | IllegalElse(num) ->
+    Printf.printf "ERROR on line %d: Else control missing if\n" num
+  | EmptyCtrlBlock(num) ->
+    Printf.printf "ERROR on line %d: Control missing block\n" num
+  | NonIfCtrlBlock(num) ->
+    Printf.printf "ERROR on line %d: Non-control statement has block\n" num
+  | DivByZero(num) ->
+    Printf.printf "ERROR on line %d: Division by 0\n" num
+  | UnknownToken(tok) ->
+    Printf.printf "ERROR tokenizing: Unknown char %c\n" tok
 );;

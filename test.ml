@@ -1,6 +1,6 @@
 #use "python.ml"
 
-let input1 =
+let primes =
   "print \"primes 0 to 100:\n\"\n"            ^
   "max = 100\n"                               ^
   "i = 0\n"                                   ^
@@ -20,14 +20,48 @@ let input1 =
   "    i += 1\n"
 ;;
 
-let input2 =
-  "print \"even numbers 0 to 100:\n\"\n"^
-  "max = 100\n"                         ^
-  "i = 0\n"                             ^
-  "while i < max:\n"                    ^
-  "    if i % 2 == 0:\n"                ^
-  "        print i\n"                   ^
-  "    i = (i += 1)\n"
-;;
+let testUnknownVar =
+  "i\n";;
 
-execPython input1;;
+let testNoOp =
+  "1 2\n";;
+
+let testNoValue =
+  "1 *\n";;
+
+let testBadParentheses =
+  "(1 + (2)\n";;
+
+let testNotVariable =
+  "True = 5\n";;
+
+let testIllegalElse =
+  "else:\n"^
+  "    1 + 1\n";;
+
+let testEmptyControl =
+  "if True:\n"^
+  "1 + 1\n";;
+
+let testIllegalControlBlock =
+  "1 + 1\n"^
+  "    2 + 2\n";;
+
+let testDivZero =
+  "1 / False\n";;
+
+let testBadChar =
+  "1 + 112&\n";;
+
+execPython testUnknownVar;;
+execPython testNoOp;;
+execPython testNoValue;;
+execPython testBadParentheses;;
+execPython testNotVariable;;
+execPython testIllegalElse;;
+execPython testEmptyControl;;
+execPython testIllegalControlBlock;;
+execPython testDivZero;;
+execPython testBadChar;;
+
+execPython primes;;

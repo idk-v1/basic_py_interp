@@ -3,8 +3,9 @@ exception UnknownVarInt of string;;
 exception MismatchedPar of int;;
 exception ExpectedValue of string * int;;
 exception ExpectedValueInt of string;;
-exception WrongType of string * int;;
-exception WrongTypeInt of string;;
+exception NotVarTypeInt of string;;
+exception NotVarType of string * int;;
+exception WrongType of string;; (*internal only*)
 exception ExpectedOp of int;;
 exception ExpectedOpInt;;
 exception HowDidWeGetHere of int;; (*internal only*)
@@ -13,6 +14,7 @@ exception InvalidOp of string;; (* shouldn't get here, internal error only proba
 exception IllegalElse of int;;
 exception EmptyCtrlBlock of int;;
 exception NonIfCtrlBlock of int;;
+exception DivByZero of int;;
 exception UnknownToken of char;; (* tokenizing phase, not much to tell *)
 
 type py_token =
