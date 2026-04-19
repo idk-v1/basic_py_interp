@@ -25,7 +25,9 @@ exception BadInputInt of string;;
 exception BadInput of string * int;;
 
 type py_token =
+  | SqrtTok
   | InputTok
+  | PrintlnTok
   | PrintTok
   | StringTok of string
   | LineNumTok of int
@@ -70,7 +72,9 @@ type py_token =
 
 let getTokString token = (
   match token with
+  | SqrtTok -> "sqrt"
   | InputTok -> "input"
+  | PrintlnTok -> "println"
   | PrintTok -> "print"
   | StringTok(_) -> "string"
   | LineNumTok(_) -> "lineNum"
@@ -115,7 +119,9 @@ let getTokString token = (
 
 let rec printTok token = (
   match token with
+  | SqrtTok -> Printf.printf "sqrt "
   | InputTok -> Printf.printf "input "
+  | PrintlnTok -> Printf.printf "println"
   | PrintTok -> Printf.printf "print "
   | StringTok(str) -> Printf.printf "%s " str
   | LineNumTok(num) -> Printf.printf "lineNum:%d " num
@@ -136,9 +142,9 @@ let rec printTok token = (
   | AugModTok -> Printf.printf "%%= "
   | EqualTok -> Printf.printf "== "
   | NotEqTok -> Printf.printf "!= "
-  | NotTok -> Printf.printf "! "
-  | AndTok -> Printf.printf "&& "
-  | OrTok -> Printf.printf "|| "
+  | NotTok -> Printf.printf "not "
+  | AndTok -> Printf.printf "and "
+  | OrTok -> Printf.printf "or "
   | GrTok -> Printf.printf "> "
   | LsTok -> Printf.printf "< "
   | GrEqTok -> Printf.printf ">= "
