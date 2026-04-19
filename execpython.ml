@@ -343,22 +343,25 @@ let fmtString str = (
   | _ -> raise (HowDidWeGetHere(0))
 );;
 
-let getInput () = (
+let rec getInput () = (
   let input = read_line () in
   (*
      try bool,
      then int,
      then float
   *)
-  if (input = "True") then (BoolTok(true))
+  if (input = "") then getInput ()
   else (
-    if (input = "False") then (BoolTok(false))
+    if (input = "True") then (BoolTok(true))
     else (
-      try (
-        IntTok(int_of_string input)
-      ) with Failure(_) -> try (
-        FloatTok(float_of_string input)
-      ) with Failure(_) -> raise (BadInputInt(input))
+      if (input = "False") then (BoolTok(false))
+      else (
+        try (
+          IntTok(int_of_string input)
+        ) with Failure(_) -> try (
+          FloatTok(float_of_string input)
+        ) with Failure(_) -> raise (BadInputInt(input))
+      )
     )
   )
 );;
