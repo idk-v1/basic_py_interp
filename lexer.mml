@@ -87,7 +87,7 @@ rule lexer0 lineNum = parse
      {
         (NameTok(var))::(lexer0 lineNum lexbuf)
      }
-     | "\n"
+     | "\n"+
      {
         (NewLineTok)::(lexer0 (lineNum+1) lexbuf)
      }
